@@ -1,16 +1,16 @@
 // ==========================================================================
-// PARISH PRIEST DINNER LOG & MONTHLY BILLING APPLICATION
+// DAILY DINNER TRACKER & MONTHLY BILLING APPLICATION
 // ==========================================================================
 
-const STORAGE_KEY = 'priest_dinner_records_v1';
-const SETTINGS_KEY = 'priest_dinner_settings_v1';
+const STORAGE_KEY = 'dinner_tracker_records_v1';
+const SETTINGS_KEY = 'dinner_tracker_settings_v1';
 
 // Default Settings
 let settings = {
   chapathiRate: 20,          // Fixed ₹20 per chapathi
   defaultChapathiQty: 4,     // Usually 4 chapathis
-  priestName: 'Rev. Parish Priest',
-  churchName: 'Parish Residence / Rectory',
+  recipientName: 'Customer / Recipient',
+  churchName: 'Dinner Delivery',
   momName: 'Mother',
   reminderEnabled: true,     // Send reminder if dinner not entered
   reminderTime: '21:00',     // 9:00 PM default
@@ -25,7 +25,7 @@ let currentViewMonth = currentDate.getMonth(); // 0 - 11
 let currentViewYear = currentDate.getFullYear();
 
 // Reminder tracking
-const LAST_REMINDER_KEY = 'priest_dinner_last_reminder_v1';
+const LAST_REMINDER_KEY = 'dinner_tracker_last_reminder_v1';
 let reminderIntervalTimer = null;
 
 function safeCreateIcons() {
@@ -98,9 +98,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function loadSettings() {
   try {
-    const saved = localStorage.getItem(SETTINGS_KEY);
+    let saved = localStorage.getItem(SETTINGS_KEY);
+    if (!saved) {
+      saved = localStorage.getItem('priest_dinner_settings_v1');
+    }
     if (saved) {
-      settings = { ...settings, ...JSON.parse(saved) };
+      const parsed = JSON.parse(saved);
+      // Migrate priestName to recipientName if present
+      if (parsed.priestName && !parsed.recipientName) {
+        parsed.recipientName = parsed.priestName === 'Rev. Parish Priest' ? 'Customer / Recipient' : parsed.priestName;
+      }
+      settings = { ...settings, ...parsed };
     }
   } catch (e) {
     console.error('Failed to load settings:', e);
@@ -111,14 +119,14 @@ function loadSettings() {
 function saveSettings() {
   const rateInput = document.getElementById('settings-rate');
   const qtyInput = document.getElementById('settings-default-qty');
-  const priestInput = document.getElementById('settings-priest-name');
+  const recipientInput = document.getElementById('settings-priest-name');
   const momInput = document.getElementById('settings-mom-name');
   const reminderToggle = document.getElementById('settings-reminder-enabled');
   const reminderTimeInput = document.getElementById('settings-reminder-time');
 
   settings.chapathiRate = Math.max(1, parseInt(rateInput.value) || 20);
   settings.defaultChapathiQty = Math.max(1, parseInt(qtyInput.value) || 4);
-  settings.priestName = priestInput.value.trim() || 'Rev. Parish Priest';
+  settings.recipientName = recipientInput.value.trim() || 'Customer / Recipient';
   settings.momName = momInput.value.trim() || 'Mother';
   settings.reminderEnabled = reminderToggle.checked;
   settings.reminderTime = reminderTimeInput.value || '21:00';
@@ -144,17 +152,17 @@ function saveSettings() {
 function syncSettingsUI() {
   document.getElementById('settings-rate').value = settings.chapathiRate;
   document.getElementById('settings-default-qty').value = settings.defaultChapathiQty;
-  document.getElementById('settings-priest-name').value = settings.priestName;
+  document.getElementById('settings-priest-name').value = settings.recipientName || 'Customer / Recipient';
   document.getElementById('settings-mom-name').value = settings.momName;
   document.getElementById('settings-reminder-enabled').checked = settings.reminderEnabled !== false;
   document.getElementById('settings-reminder-time').value = settings.reminderTime || '21:00';
 
   document.getElementById('modal-rate-indicator').textContent = settings.chapathiRate;
   document.getElementById('bill-fixed-rate').textContent = settings.chapathiRate;
-  document.getElementById('bill-to-name').textContent = settings.priestName;
+  document.getElementById('bill-to-name').textContent = settings.recipientName || 'Customer / Recipient';
   document.getElementById('bill-from-name').textContent = settings.momName || 'Mother';
   document.getElementById('bill-signature-from').textContent = settings.momName || 'Mother';
-  document.getElementById('bill-signature-to').textContent = settings.priestName || 'Parish Priest';
+  document.getElementById('bill-signature-to').textContent = settings.recipientName || 'Recipient Signature';
 
   // Quick button label
   const quickBtn = document.getElementById('quick-today-btn');
@@ -166,7 +174,10 @@ function syncSettingsUI() {
 
 function loadRecords() {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    let saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) {
+      saved = localStorage.getItem('priest_dinner_records_v1');
+    }
     if (saved) {
       dinnerRecords = JSON.parse(saved);
     }
@@ -363,7 +374,7 @@ function updateTodayBanner() {
     `;
     quickBtn.onclick = () => openEntryModal(todayIso);
   } else {
-    statusLabel.textContent = `Father's dinner not logged yet. Click below for quick 1-tap entry!`;
+    statusLabel.textContent = `Today's dinner not logged yet. Click below for quick 1-tap entry!`;
     const defaultCost = settings.defaultChapathiQty * settings.chapathiRate;
     quickBtn.innerHTML = `
       <span class="text-lg">⚡</span>
@@ -869,7 +880,7 @@ function copyBillWhatsApp() {
   const grandTotal = chapathiCost + totalOutsideCost;
 
   const msg = `*DINNER BILL STATEMENT - ${monthLabel.toUpperCase()}* 🧾
-To: *${settings.priestName}*
+To: *${settings.recipientName || settings.priestName || 'Recipient'}*
 From: *${settings.momName || 'Mother'}*
 ---------------------------------------
 🗓️ Total Dinner Days: *${activeDays} days*
@@ -924,7 +935,7 @@ function exportMonthCsv() {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.setAttribute('href', url);
-  link.setAttribute('download', `Priest_Dinner_Bill_${monthLabel}.csv`);
+  link.setAttribute('download', `Dinner_Bill_${monthLabel}.csv`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
@@ -954,7 +965,7 @@ function exportDataBackup() {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.setAttribute('href', url);
-  link.setAttribute('download', `priest_dinner_backup_${getTodayIso()}.json`);
+  link.setAttribute('download', `dinner_tracker_backup_${getTodayIso()}.json`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
@@ -1192,7 +1203,7 @@ function triggerDinnerReminder(isManualTest = false) {
       const title = isManualTest ? '🔔 Test: Dinner Log Reminder (9:00 PM)' : '⏰ Dinner Reminder (9:00 PM)';
       const body = isManualTest 
         ? "Reminder works perfectly! At 9:00 PM you'll get this reminder if today's dinner is not entered." 
-        : "Father's dinner has not been entered yet today! Tap here to log 4 Chapathis or Outside Food.";
+        : "Today's dinner has not been entered yet today! Tap here to log 4 Chapathis or Outside Food.";
 
       const notif = new Notification(title, {
         body: body,

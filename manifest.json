@@ -1,7 +1,7 @@
 {
-  "name": "Father Dinner Tracker - Parish Priest Dinner Log",
-  "short_name": "Dinner Bill",
-  "description": "Parish Priest Daily Dinner Tracker, Tamil Voice Assistant & Monthly Bill Generator",
+  "name": "Dinner Tracker - Daily Meals & Monthly Bill",
+  "short_name": "Dinner Tracker",
+  "description": "Daily Dinner Tracker, Tamil Voice Assistant & Monthly Bill Generator",
   "start_url": "./index.html",
   "display": "standalone",
   "orientation": "portrait-primary",

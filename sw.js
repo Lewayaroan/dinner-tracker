@@ -1,4 +1,4 @@
-const CACHE_NAME = 'priest-dinner-v1';
+const CACHE_NAME = 'dinner-tracker-v1';
 const ASSETS = [
   './',
   './index.html',

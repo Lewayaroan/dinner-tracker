@@ -1,6 +1,6 @@
-# 🫓 Parish Priest Dinner Log & Monthly Bill
+# 🫓 Daily Dinner Tracker & Monthly Bill
 
-A simple, beautiful, and mom-friendly web application to track daily dinners prepared for the Parish Priest and automatically generate itemized monthly bills.
+A simple, beautiful, and mom-friendly web application to track daily dinners and automatically generate itemized monthly bills.
 
 ---
 
@@ -35,7 +35,7 @@ A simple, beautiful, and mom-friendly web application to track daily dinners pre
    - Calculates **Chapathis Subtotal**, **Outside Food Subtotal**, and **Grand Total**.
    - Includes **Amount in Words** (e.g. *Rupees Two Thousand Four Hundred Only*).
    - **Print / Save as PDF**: Formatted cleanly for A4 printing with signatures.
-   - **Copy WhatsApp Summary**: 1-click button to copy a neat WhatsApp text message with all details to send directly to Father or Parish committee.
+   - **Copy WhatsApp Summary**: 1-click button to copy a neat WhatsApp text message with all details to send directly to recipient.
    - **Export CSV**: For Excel spreadsheets.
 
 6. **🎙️ குரல் வழி பதிவு (Tamil Voice Assistant for Mom)**:
@@ -51,7 +51,7 @@ A simple, beautiful, and mom-friendly web application to track daily dinners pre
 
 7. **⏰ 9:00 PM Reminder Notification**:
    - At **9:00 PM every evening**, if today's dinner has not been logged yet, the app automatically:
-     - Sends a browser notification: *"⏰ Dinner Reminder: Father's dinner has not been entered yet today!"*
+     - Sends a browser notification: *"⏰ Dinner Reminder: Today's dinner has not been entered yet today!"*
      - Plays a gentle pleasant dual-tone chime sound.
      - Displays a prominent reminder alert banner inside the app with a 1-tap **"Log Now"** button.
    - You can test the reminder sound and alert anytime in **Settings ⚙️ -> Test Reminder**.
@@ -59,11 +59,9 @@ A simple, beautiful, and mom-friendly web application to track daily dinners pre
 8. **💾 Offline & Auto-Save**:
    - All records are saved automatically in browser storage (`localStorage`).
    - Backup & Restore buttons in Settings to keep your data safe.
+   - Installable as a Progressive Web App (PWA) on mobile home screen.
 
 ---
 
-### 🚀 How to Open and Use:
-
-- **Option 1**: Simply double-click [`open_app.bat`](file:///c:/Users/acer/Downloads/APP/open_app.bat) or [`index.html`](file:///c:/Users/acer/Downloads/APP/index.html) to open in your browser.
-- **Option 2 (Mobile / Phone)**:
-  - You can open the file directly in Chrome / Edge / Safari on mobile, or host it on free platforms like GitHub Pages, Vercel, or Netlify so your mom can add it to her phone home screen like an app!
+### 🚀 Live App & Mobile Install:
+- **Live URL**: https://lewayaroan.github.io/dinner-tracker/
