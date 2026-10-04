@@ -119,14 +119,14 @@ function loadSettings() {
 function saveSettings() {
   const rateInput = document.getElementById('settings-rate');
   const qtyInput = document.getElementById('settings-default-qty');
-  const recipientInput = document.getElementById('settings-priest-name');
+  const recipientInput = document.getElementById('settings-recipient-name') || document.getElementById('settings-priest-name');
   const momInput = document.getElementById('settings-mom-name');
   const reminderToggle = document.getElementById('settings-reminder-enabled');
   const reminderTimeInput = document.getElementById('settings-reminder-time');
 
   settings.chapathiRate = Math.max(1, parseInt(rateInput.value) || 20);
   settings.defaultChapathiQty = Math.max(1, parseInt(qtyInput.value) || 4);
-  settings.recipientName = recipientInput.value.trim() || 'Customer / Recipient';
+  settings.recipientName = recipientInput ? (recipientInput.value.trim() || 'Customer / Recipient') : 'Customer / Recipient';
   settings.momName = momInput.value.trim() || 'Mother';
   settings.reminderEnabled = reminderToggle.checked;
   settings.reminderTime = reminderTimeInput.value || '21:00';
@@ -152,7 +152,8 @@ function saveSettings() {
 function syncSettingsUI() {
   document.getElementById('settings-rate').value = settings.chapathiRate;
   document.getElementById('settings-default-qty').value = settings.defaultChapathiQty;
-  document.getElementById('settings-priest-name').value = settings.recipientName || 'Customer / Recipient';
+  const recipEl = document.getElementById('settings-recipient-name') || document.getElementById('settings-priest-name');
+  if (recipEl) recipEl.value = settings.recipientName || 'Customer / Recipient';
   document.getElementById('settings-mom-name').value = settings.momName;
   document.getElementById('settings-reminder-enabled').checked = settings.reminderEnabled !== false;
   document.getElementById('settings-reminder-time').value = settings.reminderTime || '21:00';
