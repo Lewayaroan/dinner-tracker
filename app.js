@@ -34,6 +34,51 @@ function safeCreateIcons() {
   }
 }
 
+// --------------------------------------------------------------------------
+// PWA & MOBILE APP INSTALLATION
+// --------------------------------------------------------------------------
+let deferredPwaPrompt = null;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPwaPrompt = e;
+  const headerBtn = document.getElementById('install-app-btn');
+  const banner = document.getElementById('pwa-install-banner');
+  if (headerBtn) headerBtn.classList.remove('hidden');
+  if (banner) banner.classList.remove('hidden');
+});
+
+window.addEventListener('appinstalled', () => {
+  deferredPwaPrompt = null;
+  const headerBtn = document.getElementById('install-app-btn');
+  const banner = document.getElementById('pwa-install-banner');
+  if (headerBtn) headerBtn.classList.add('hidden');
+  if (banner) banner.classList.add('hidden');
+  showToast('App installed successfully on your phone!', '📱');
+});
+
+function triggerPwaInstall() {
+  if (deferredPwaPrompt) {
+    deferredPwaPrompt.prompt();
+    deferredPwaPrompt.userChoice.then((choiceResult) => {
+      if (choiceResult.outcome === 'accepted') {
+        showToast('Installing App...', '📲');
+      }
+      deferredPwaPrompt = null;
+    });
+  } else {
+    alert('போனில் App-ஆக நிறுவ (To install as App on Phone):\n\n1. Browser-ன் வலது மேல்புறத்தில் உள்ள மூன்று புள்ளிகளை (⋮) அழுத்தவும்.\n2. "Add to Home screen" (முகப்புத் திரையில் சேர்) அல்லது "Install App" என்பதைத் தேர்ந்தெடுக்கவும்.\n\n(iPhone பயனர்கள்: Share பொத்தானை அழுத்தி "Add to Home Screen" என்பதைத் தேர்ந்தெடுக்கவும்)');
+  }
+}
+
+function registerServiceWorker() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch((err) => {
+      console.log('SW registration:', err);
+    });
+  }
+}
+
 // Initialize App
 document.addEventListener('DOMContentLoaded', () => {
   loadSettings();
@@ -43,6 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
   updateMonthStats();
   initBillViewMonth();
   initReminderSystem();
+  registerServiceWorker();
   safeCreateIcons();
 });
 

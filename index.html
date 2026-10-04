@@ -4,6 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Parish Priest Dinner Log & Monthly Bill</title>
+  <!-- PWA & Mobile App Meta Tags -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#f97316">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Dinner Bill">
+
   <!-- Google Fonts: Inter & Outfit -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -106,6 +114,11 @@
           </button>
         </div>
 
+        <button id="install-app-btn" onclick="triggerPwaInstall()" title="Install App on Phone" class="hidden flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs shadow-sm transition active:scale-95">
+          <span>📲</span>
+          <span class="hidden sm:inline">Install App</span>
+        </button>
+
         <button onclick="openSettingsModal()" title="Settings" class="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition border border-slate-200">
           <i data-lucide="settings" class="w-4 h-4"></i>
         </button>
@@ -118,6 +131,22 @@
 
     <!-- VIEW 1: CALENDAR & DAILY ENTRY -->
     <div id="view-calendar" class="space-y-6">
+
+      <!-- MOBILE PWA INSTALL BANNER -->
+      <div id="pwa-install-banner" class="hidden bg-gradient-to-r from-brand-600 via-orange-600 to-amber-600 rounded-2xl p-3.5 sm:p-4 text-white shadow-md flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-xl shrink-0">
+            📲
+          </div>
+          <div>
+            <p class="font-bold text-sm leading-snug">போனில் App ஆக பதிவிறக்கம் செய்ய (Install App)</p>
+            <p class="text-xs text-orange-100">Click below to add directly to mobile home screen</p>
+          </div>
+        </div>
+        <button type="button" onclick="triggerPwaInstall()" class="px-4 py-2 rounded-xl bg-white text-brand-700 hover:bg-amber-50 font-bold text-xs shadow transition active:scale-95 shrink-0">
+          Install Now / நிறுவு
+        </button>
+      </div>
 
       <!-- 9:00 PM MISSED ENTRY ALERT BANNER (Shows when >= 9 PM and dinner not logged) -->
       <div id="night-reminder-alert" class="hidden bg-rose-50 border-2 border-rose-300 rounded-2xl p-4 sm:p-5 flex items-center justify-between gap-4 shadow-md animate-pulse">
