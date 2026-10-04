@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parish Priest Dinner Log & Monthly Bill</title>
+  <!-- Google Fonts: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Outfit', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#fff7ed',
+              100: '#ffedd5',
+              200: '#fed7aa',
+              300: '#fdba74',
+              400: '#fb923c',
+              500: '#f97316', // Vibrant warm amber/orange for homemade food
+              600: '#ea580c',
+              700: '#c2410c',
+              800: '#9a3412',
+              900: '#7c2d12',
+            },
+            priest: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              500: '#22c55e',
+              700: '#15803d',
+              800: '#166534',
+              900: '#14532d',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom Scrollbar & Print styles */
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #printable-bill, #printable-bill * {
+        visibility: visible;
+      }
+      #printable-bill {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 20px;
+        background: white !important;
+        color: black !important;
+        box-shadow: none !important;
+        border: none !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen antialiased flex flex-col selection:bg-brand-100 selection:text-brand-900">
+
+  <!-- TOP HEADER / NAV -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm no-print">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-amber-500 text-white flex items-center justify-center shadow-md shadow-brand-500/20 text-xl font-bold">
+          🫓
+        </div>
+        <div>
+          <h1 class="text-lg sm:text-xl font-display font-bold text-slate-900 leading-tight">Dinner Bill & Tracker</h1>
+          <p class="text-xs text-slate-500 font-medium">Parish Priest Daily Meals · Easy Record & Billing</p>
+        </div>
+      </div>
+
+      <!-- Action Tabs & Settings -->
+      <div class="flex items-center gap-2">
+        <div class="bg-slate-100 p-1 rounded-xl flex items-center text-sm font-semibold">
+          <button id="tab-calendar-btn" onclick="switchView('calendar')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white text-slate-800 shadow-sm transition">
+            <i data-lucide="calendar" class="w-4 h-4 text-brand-600"></i>
+            <span>Daily Log</span>
+          </button>
+          <button id="tab-bill-btn" onclick="switchView('bill')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition">
+            <i data-lucide="receipt" class="w-4 h-4 text-emerald-600"></i>
+            <span>Monthly Bill</span>
+          </button>
+        </div>
+
+        <button onclick="openSettingsModal()" title="Settings" class="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition border border-slate-200">
+          <i data-lucide="settings" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN WRAPPER -->
+  <main class="flex-grow max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
+
+    <!-- VIEW 1: CALENDAR & DAILY ENTRY -->
+    <div id="view-calendar" class="space-y-6">
+
+      <!-- 9:00 PM MISSED ENTRY ALERT BANNER (Shows when >= 9 PM and dinner not logged) -->
+      <div id="night-reminder-alert" class="hidden bg-rose-50 border-2 border-rose-300 rounded-2xl p-4 sm:p-5 flex items-center justify-between gap-4 shadow-md animate-pulse">
+        <div class="flex items-center gap-3.5">
+          <div class="w-11 h-11 rounded-xl bg-rose-500 text-white flex items-center justify-center font-bold text-xl shadow">
+            ⏰
+          </div>
+          <div>
+            <h3 class="font-display font-bold text-rose-900 text-base">9:00 PM Dinner Reminder!</h3>
+            <p class="text-xs sm:text-sm text-rose-700 font-medium">Father's dinner has not been entered for today yet. Don't forget to log it!</p>
+          </div>
+        </div>
+        <button onclick="openEntryModal()" class="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm shadow transition shrink-0 active:scale-95">
+          Log Now →
+        </button>
+      </div>
+
+      <!-- BROWSER NOTIFICATION PERMISSION PROMPT (If not yet enabled) -->
+      <div id="notification-prompt-banner" class="hidden bg-amber-50 border border-amber-200 rounded-2xl p-3.5 sm:p-4 flex flex-wrap items-center justify-between gap-3 text-sm">
+        <div class="flex items-center gap-3">
+          <span class="text-2xl">🔔</span>
+          <div>
+            <p class="font-bold text-amber-900 text-sm">Enable 9:00 PM Daily Reminder Notification</p>
+            <p class="text-xs text-amber-700">Get an automatic reminder on your device at 9:00 PM if dinner is not logged yet.</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="requestNotificationPermission()" class="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow transition active:scale-95">
+            Turn On Reminders
+          </button>
+          <button onclick="dismissNotificationPrompt()" class="p-2 text-slate-400 hover:text-slate-600">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- QUICK ACTION BANNER FOR TODAY (SUPER MOM-FRIENDLY!) -->
+      <div class="bg-gradient-to-r from-amber-500 via-brand-500 to-orange-600 rounded-2xl p-4 sm:p-6 text-white shadow-lg shadow-orange-500/15 relative overflow-hidden">
+        <div class="absolute -right-8 -bottom-8 opacity-15 pointer-events-none text-9xl">🫓</div>
+        
+        <div class="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div>
+            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-semibold tracking-wide uppercase">
+              <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+              <span id="today-banner-label">Today's Dinner</span>
+            </div>
+            <h2 id="today-banner-date" class="text-xl sm:text-2xl font-display font-bold mt-1 text-white">Loading...</h2>
+            <p id="today-banner-status" class="text-orange-100 text-sm mt-0.5">Checking today's status...</p>
+          </div>
+
+          <!-- Quick One-Tap Buttons -->
+          <div class="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+            <button onclick="quickLogDefaultToday()" id="quick-today-btn" class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 sm:px-5 py-3 rounded-xl bg-white text-brand-700 hover:bg-amber-50 active:scale-95 font-bold shadow-md transition text-sm sm:text-base">
+              <span class="text-lg">⚡</span>
+              <span>Add 4 Chapathis (₹80)</span>
+            </button>
+            <button onclick="openEntryModal(null, 'outside')" class="flex items-center justify-center gap-2 px-3.5 sm:px-4 py-3 rounded-xl bg-purple-700 hover:bg-purple-800 active:scale-95 text-white font-bold shadow-md transition text-sm">
+              <span class="text-lg">🥡</span>
+              <span>Outside Food</span>
+            </button>
+            <button onclick="openEntryModal(null, 'custom')" class="flex items-center justify-center gap-1.5 px-3.5 sm:px-4 py-3 rounded-xl bg-white/20 hover:bg-white/30 active:scale-95 text-white font-semibold backdrop-blur-sm border border-white/30 transition text-sm">
+              <span class="text-lg">📅</span>
+              <span>Custom / Pick Date</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAMIL VOICE ASSISTANT CARD (SPECIAL FOR MOM) -->
+      <div id="tamil-voice-card" class="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 rounded-2xl p-4 sm:p-5 text-white shadow-lg shadow-emerald-600/15 flex flex-col md:flex-row items-center justify-between gap-4 transition-all">
+        <div class="flex items-center gap-3.5 w-full md:w-auto">
+          <div id="voice-mic-icon-wrapper" class="w-12 h-12 rounded-2xl bg-white text-emerald-700 flex items-center justify-center font-bold text-2xl shadow-md shrink-0 transition-transform">
+            🎙️
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="font-display font-bold text-base sm:text-lg text-white">குரல் வழி பதிவு (Tamil Voice Entry)</h3>
+              <span class="px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-bold uppercase tracking-wider text-emerald-100">🎙️ தமிழ்</span>
+            </div>
+            <p id="voice-status-text" class="text-xs sm:text-sm text-emerald-100 mt-0.5">
+              பொத்தானை அழுத்தி பேசுங்கள்: <span class="font-semibold text-white">"இன்னைக்கு 4 சப்பாத்தி"</span> அல்லது <span class="font-semibold text-white">"பரோட்டா 120 ரூபாய்"</span>
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2.5 w-full md:w-auto justify-end">
+          <button type="button" id="start-voice-btn" onclick="startTamilVoiceRecognition()" class="w-full md:w-auto flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-white text-emerald-800 hover:bg-emerald-50 active:scale-95 font-bold shadow-md transition text-sm sm:text-base">
+            <span id="voice-mic-indicator" class="text-xl">🎙️</span>
+            <span id="voice-btn-label">தமிழில் பேசுங்கள்</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- MONTH STATS HIGHLIGHTS -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3.5">
+          <div class="w-11 h-11 rounded-xl bg-amber-50 text-brand-600 flex items-center justify-center font-bold text-xl">
+            🫓
+          </div>
+          <div>
+            <p class="text-xs font-medium text-slate-500">Chapathis Cooked</p>
+            <p id="stat-total-chapathis" class="text-xl sm:text-2xl font-display font-bold text-slate-900">0</p>
+            <p id="stat-chapathi-cost" class="text-xs text-brand-600 font-semibold">₹0.00</p>
+          </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3.5">
+          <div class="w-11 h-11 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+            <i data-lucide="shopping-bag" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <p class="text-xs font-medium text-slate-500">Outside Food Days</p>
+            <p id="stat-outside-days" class="text-xl sm:text-2xl font-display font-bold text-slate-900">0</p>
+            <p id="stat-outside-cost" class="text-xs text-purple-600 font-semibold">₹0.00</p>
+          </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3.5">
+          <div class="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+            <i data-lucide="calendar-check-2" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <p class="text-xs font-medium text-slate-500">Total Dinner Days</p>
+            <p id="stat-active-days" class="text-xl sm:text-2xl font-display font-bold text-slate-900">0</p>
+            <p id="stat-active-sub" class="text-xs text-slate-400">in this month</p>
+          </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl border border-emerald-200/90 bg-emerald-50/30 shadow-sm flex items-center gap-3.5">
+          <div class="w-11 h-11 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
+            <i data-lucide="indian-rupee" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <p class="text-xs font-medium text-emerald-800">Month Total Bill</p>
+            <p id="stat-grand-total" class="text-xl sm:text-2xl font-display font-extrabold text-emerald-700">₹0</p>
+            <button onclick="switchView('bill')" class="text-xs text-emerald-700 underline font-semibold hover:text-emerald-900">View bill →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CALENDAR CARD -->
+      <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
+        
+        <!-- Month Selector Bar -->
+        <div class="px-5 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 bg-slate-50/50">
+          <div class="flex items-center gap-3">
+            <h3 id="current-month-label" class="text-lg sm:text-xl font-display font-bold text-slate-800">
+              October 2026
+            </h3>
+            <button onclick="jumpToCurrentMonth()" class="text-xs font-semibold px-2.5 py-1 rounded-md bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition">
+              This Month
+            </button>
+          </div>
+
+          <!-- Nav buttons -->
+          <div class="flex items-center gap-1.5">
+            <button onclick="changeMonth(-1)" class="p-2 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition active:scale-95">
+              <i data-lucide="chevron-left" class="w-4 h-4"></i>
+            </button>
+            <button onclick="changeMonth(1)" class="p-2 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition active:scale-95">
+              <i data-lucide="chevron-right" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Calendar Weekday Headers -->
+        <div class="calendar-grid bg-slate-100/70 border-b border-slate-200 text-center text-xs font-bold text-slate-500 uppercase tracking-wider py-2.5">
+          <div class="text-rose-500">Sun</div>
+          <div>Mon</div>
+          <div>Tue</div>
+          <div>Wed</div>
+          <div>Thu</div>
+          <div>Fri</div>
+          <div>Sat</div>
+        </div>
+
+        <!-- Calendar Cells Grid -->
+        <div id="calendar-days-container" class="calendar-grid divide-x divide-y divide-slate-100 bg-slate-100">
+          <!-- Dynamically populated via app.js -->
+        </div>
+
+        <!-- Calendar Footer / Legend -->
+        <div class="p-4 border-t border-slate-100 bg-slate-50/70 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-600">
+          <div class="flex flex-wrap items-center gap-4">
+            <span class="flex items-center gap-1.5">
+              <span class="w-3 h-3 rounded-full bg-amber-500 inline-block"></span>
+              <span>Chapathis (₹20/each)</span>
+            </span>
+            <span class="flex items-center gap-1.5">
+              <span class="w-3 h-3 rounded-full bg-purple-500 inline-block"></span>
+              <span>Outside Food</span>
+            </span>
+            <span class="flex items-center gap-1.5">
+              <span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span>
+              <span>Both</span>
+            </span>
+            <span class="flex items-center gap-1.5 text-slate-400">
+              <span class="w-3 h-3 rounded-full bg-slate-200 inline-block"></span>
+              <span>No dinner</span>
+            </span>
+          </div>
+          <p class="text-slate-500 italic">💡 Click on any day to add or edit dinner record</p>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- VIEW 2: MONTHLY BILL INVOICE & GENERATION -->
+    <div id="view-bill" class="space-y-6 hidden">
+      
+      <!-- Top Action Toolbar -->
+      <div class="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200/90 shadow-sm no-print">
+        <div class="flex items-center gap-2">
+          <label for="bill-month-picker" class="text-xs font-bold uppercase tracking-wider text-slate-500">Select Month:</label>
+          <input type="month" id="bill-month-picker" onchange="onBillMonthChange()" class="px-3 py-1.5 rounded-lg border border-slate-200 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500">
+        </div>
+
+        <div class="flex items-center gap-2 flex-wrap">
+          <button onclick="window.print()" class="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-900 text-white font-semibold hover:bg-slate-800 active:scale-95 transition shadow-sm text-sm">
+            <i data-lucide="printer" class="w-4 h-4"></i>
+            <span>Print / Save as PDF</span>
+          </button>
+
+          <button onclick="copyBillWhatsApp()" class="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 text-white font-semibold hover:bg-emerald-700 active:scale-95 transition shadow-sm text-sm">
+            <i data-lucide="share-2" class="w-4 h-4"></i>
+            <span>Copy WhatsApp Summary</span>
+          </button>
+
+          <button onclick="exportMonthCsv()" class="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold transition text-sm">
+            <i data-lucide="download" class="w-4 h-4"></i>
+            <span>Export CSV</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- PRINTABLE BILL CONTAINER -->
+      <div id="printable-bill" class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6 sm:p-10 max-w-4xl mx-auto space-y-8">
+        
+        <!-- Bill Header -->
+        <div class="border-b-2 border-slate-800 pb-6 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
+          <div>
+            <div class="inline-block px-3 py-1 rounded bg-amber-100 text-brand-800 font-bold text-xs uppercase tracking-wider mb-2">
+              Monthly Dinner Invoice
+            </div>
+            <h2 class="text-2xl sm:text-3xl font-display font-extrabold text-slate-900" id="bill-header-title">Parish Priest Dinner Bill</h2>
+            <p class="text-slate-500 text-sm mt-1" id="bill-parish-subtitle">St. Parish Church Presbytery</p>
+          </div>
+
+          <div class="sm:text-right">
+            <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Statement For</p>
+            <p class="text-lg font-bold text-slate-800 font-display" id="bill-month-display">October 2026</p>
+            <p class="text-xs text-slate-500 mt-1" id="bill-generated-date">Date: 04 Oct 2026</p>
+          </div>
+        </div>
+
+        <!-- Party Details Box -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200 text-sm">
+          <div>
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block">Bill To / Recipient:</span>
+            <p class="font-bold text-slate-800 text-base" id="bill-to-name">Rev. Parish Priest</p>
+            <p class="text-slate-600 text-xs mt-0.5" id="bill-to-church">Parish Residence / Rectory</p>
+          </div>
+          <div class="sm:text-right">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block">Cooked & Prepared By:</span>
+            <p class="font-bold text-slate-800 text-base" id="bill-from-name">Mrs. Mother</p>
+            <p class="text-slate-600 text-xs mt-0.5">Dinner Catering & Outside Delivery</p>
+          </div>
+        </div>
+
+        <!-- Rates Information Notice -->
+        <div class="flex items-center justify-between text-xs text-slate-500 px-1 border-b border-dashed border-slate-200 pb-3">
+          <span>Standard Fixed Chapathi Rate: <strong class="text-slate-700">₹<span id="bill-fixed-rate">20</span> / chapathi</strong></span>
+          <span>Outside Food: <strong class="text-slate-700">Actual purchased price</strong></span>
+        </div>
+
+        <!-- Itemized Table -->
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm border-collapse">
+            <thead>
+              <tr class="border-b border-slate-300 text-xs font-bold text-slate-600 uppercase tracking-wider bg-slate-50">
+                <th class="py-3 px-3">Date</th>
+                <th class="py-3 px-3">Day</th>
+                <th class="py-3 px-3">Dinner Details</th>
+                <th class="py-3 px-3 text-center">Chapathis</th>
+                <th class="py-3 px-3 text-right">Outside Food (₹)</th>
+                <th class="py-3 px-3 text-right">Daily Total (₹)</th>
+              </tr>
+            </thead>
+            <tbody id="bill-table-body" class="divide-y divide-slate-100">
+              <!-- Dynamically rendered -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Financial Summary Totals -->
+        <div class="pt-4 border-t-2 border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+          <div class="space-y-1">
+            <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Amount in Words:</p>
+            <p id="bill-amount-words" class="text-sm font-semibold text-slate-800 italic">Rupees Zero Only</p>
+            <p class="text-xs text-slate-400">Total Dinner Days Served: <span id="bill-total-days-count" class="font-semibold text-slate-700">0 days</span></p>
+          </div>
+
+          <div class="w-full sm:w-72 bg-slate-50 rounded-xl p-4 border border-slate-200 space-y-2 text-sm">
+            <div class="flex justify-between text-slate-600">
+              <span>Chapathis Subtotal:</span>
+              <span id="bill-subtotal-chapathis" class="font-semibold">₹0.00</span>
+            </div>
+            <div class="flex justify-between text-slate-600">
+              <span>Outside Food Subtotal:</span>
+              <span id="bill-subtotal-outside" class="font-semibold">₹0.00</span>
+            </div>
+            <div class="border-t border-slate-300 pt-2 flex justify-between items-center">
+              <span class="font-bold text-slate-900 text-base">Grand Total:</span>
+              <span id="bill-grand-total" class="font-extrabold text-xl text-emerald-700">₹0.00</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Signatures / Notes -->
+        <div class="pt-8 grid grid-cols-2 gap-8 text-xs text-slate-500 border-t border-slate-100">
+          <div>
+            <p class="font-semibold text-slate-700 mb-8">Prepared By (Signature):</p>
+            <p class="border-t border-slate-300 pt-1 inline-block w-40 text-center font-medium" id="bill-signature-from">Mother</p>
+          </div>
+          <div class="text-right">
+            <p class="font-semibold text-slate-700 mb-8">Received & Approved By:</p>
+            <p class="border-t border-slate-300 pt-1 inline-block w-40 text-center font-medium" id="bill-signature-to">Parish Priest</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <!-- MODAL: ADD / EDIT DAILY DINNER ENTRY -->
+  <div id="entry-modal" onclick="if(event.target === this) closeEntryModal()" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 hidden overflow-y-auto">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 transition-all my-auto" id="entry-modal-card">
+      
+      <!-- Modal Header -->
+      <div class="bg-gradient-to-r from-amber-500 to-brand-600 px-5 sm:px-6 py-4 text-white flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-xl font-bold">
+            🍽️
+          </div>
+          <div>
+            <h3 class="font-display font-bold text-lg text-white">Log Father's Dinner</h3>
+            <p id="modal-date-display" class="text-xs text-amber-100 font-medium">Sunday, 04 October 2026</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="startTamilVoiceRecognition(true)" title="Speak in Tamil" class="px-3 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 text-white text-xs font-bold transition flex items-center gap-1.5">
+            <span>🎙️</span>
+            <span class="hidden sm:inline">தமிழில் பேச</span>
+          </button>
+          <button type="button" onclick="closeEntryModal()" class="p-1.5 rounded-full hover:bg-white/20 text-white transition">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Modal Body Form -->
+      <form id="entry-form" onsubmit="saveEntry(event)" class="p-5 sm:p-6 space-y-4">
+        
+        <!-- DATE PICKER ROW (Allows mom or user to easily choose ANY date) -->
+        <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex flex-wrap items-center justify-between gap-2.5">
+          <div class="flex items-center gap-2">
+            <span class="text-base">📅</span>
+            <label for="entry-date-picker" class="text-xs font-bold uppercase tracking-wider text-slate-600">Entry Date:</label>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <input type="date" id="entry-date-picker" onchange="onModalDateChanged(this.value)" class="px-2.5 py-1 text-sm font-bold text-slate-800 rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+            <button type="button" onclick="setModalDateToToday()" class="text-xs font-semibold px-2 py-1 rounded bg-white border border-slate-200 text-slate-700 hover:bg-slate-100">Today</button>
+            <button type="button" onclick="setModalDateToYesterday()" class="text-xs font-semibold px-2 py-1 rounded bg-white border border-slate-200 text-slate-700 hover:bg-slate-100">Yesterday</button>
+          </div>
+        </div>
+
+        <!-- WHAT DID FATHER EAT? (MODE TABS) -->
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Dinner Type / Option:</label>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-1 bg-slate-100 rounded-2xl text-xs font-bold text-center">
+            <button type="button" id="mode-btn-chapathi" onclick="setEntryMode('chapathi')" class="py-2.5 px-2 rounded-xl transition bg-white text-slate-900 shadow-sm">
+              🫓 Chapathis
+            </button>
+            <button type="button" id="mode-btn-outside" onclick="setEntryMode('outside')" class="py-2.5 px-2 rounded-xl transition text-slate-600 hover:text-slate-900">
+              🥡 Outside Food
+            </button>
+            <button type="button" id="mode-btn-both" onclick="setEntryMode('both')" class="py-2.5 px-2 rounded-xl transition text-slate-600 hover:text-slate-900">
+              🍽️ Both
+            </button>
+            <button type="button" id="mode-btn-none" onclick="setEntryMode('none')" class="py-2.5 px-2 rounded-xl transition text-slate-600 hover:text-slate-900">
+              ❌ No Dinner
+            </button>
+          </div>
+        </div>
+
+        <!-- SECTION A: HOME COOKED CHAPATHIS -->
+        <div id="section-chapathi-container" class="p-4 rounded-2xl bg-amber-50/70 border border-amber-200/80 space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="text-xl">🫓</span>
+              <div>
+                <label class="font-bold text-slate-900 text-sm">Number of Chapathis</label>
+                <p class="text-xs text-slate-500">Fixed: ₹<span id="modal-rate-indicator">20</span> per chapathi</p>
+              </div>
+            </div>
+            <span id="modal-chapathi-calc" class="text-sm font-bold text-brand-700 bg-white px-2.5 py-1 rounded-lg border border-amber-200 shadow-xs">
+              ₹80
+            </span>
+          </div>
+
+          <!-- Counter and Presets -->
+          <div class="flex items-center justify-between gap-3 pt-1">
+            <div class="flex items-center bg-white rounded-xl border border-amber-300 p-1 shadow-xs">
+              <button type="button" onclick="adjustChapathi(-1)" class="w-9 h-9 rounded-lg hover:bg-slate-100 flex items-center justify-center font-bold text-lg text-slate-700 active:scale-95 transition">-</button>
+              <input type="number" min="0" max="50" id="entry-chapathis" value="4" oninput="updateModalCalculation()" class="w-14 text-center font-bold text-lg text-slate-900 focus:outline-none bg-transparent">
+              <button type="button" onclick="adjustChapathi(1)" class="w-9 h-9 rounded-lg hover:bg-slate-100 flex items-center justify-center font-bold text-lg text-slate-700 active:scale-95 transition">+</button>
+            </div>
+
+            <!-- Quick Preset Chips -->
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <button type="button" onclick="setChapathis(0)" class="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-white border border-slate-200 text-slate-600 hover:border-brand-400">0</button>
+              <button type="button" onclick="setChapathis(2)" class="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-white border border-slate-200 text-slate-600 hover:border-brand-400">2</button>
+              <button type="button" onclick="setChapathis(3)" class="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-white border border-slate-200 text-slate-600 hover:border-brand-400">3</button>
+              <button type="button" onclick="setChapathis(4)" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-brand-500 text-white shadow-xs">4</button>
+              <button type="button" onclick="setChapathis(5)" class="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-white border border-slate-200 text-slate-600 hover:border-brand-400">5</button>
+              <button type="button" onclick="setChapathis(6)" class="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-white border border-slate-200 text-slate-600 hover:border-brand-400">6</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION B: OUTSIDE FOOD -->
+        <div id="section-outside-container" class="p-4 rounded-2xl bg-purple-50/70 border border-purple-200/80 space-y-3 hidden">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="text-xl">🥡</span>
+              <div>
+                <label class="font-bold text-slate-900 text-sm">Outside Food Details</label>
+                <p class="text-xs text-slate-500">Purchased from hotel / restaurant</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Food Suggestions for Mom -->
+          <div>
+            <p class="text-[11px] font-bold text-purple-800 uppercase tracking-wider mb-1">Quick Suggestions:</p>
+            <div class="flex flex-wrap gap-1.5">
+              <button type="button" onclick="quickFillOutsideFood('2 Parottas & Kurma')" class="px-2.5 py-1 text-xs rounded-lg bg-white border border-purple-200 text-purple-800 hover:bg-purple-100 font-medium">+ Parottas</button>
+              <button type="button" onclick="quickFillOutsideFood('Hotel Meals')" class="px-2.5 py-1 text-xs rounded-lg bg-white border border-purple-200 text-purple-800 hover:bg-purple-100 font-medium">+ Meals</button>
+              <button type="button" onclick="quickFillOutsideFood('Idli & Vada')" class="px-2.5 py-1 text-xs rounded-lg bg-white border border-purple-200 text-purple-800 hover:bg-purple-100 font-medium">+ Idli</button>
+              <button type="button" onclick="quickFillOutsideFood('Dosa with Chutney')" class="px-2.5 py-1 text-xs rounded-lg bg-white border border-purple-200 text-purple-800 hover:bg-purple-100 font-medium">+ Dosa</button>
+              <button type="button" onclick="quickFillOutsideFood('Biryani')" class="px-2.5 py-1 text-xs rounded-lg bg-white border border-purple-200 text-purple-800 hover:bg-purple-100 font-medium">+ Biryani</button>
+            </div>
+          </div>
+
+          <div class="space-y-2.5 pt-1">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Food Item Name / Hotel:</label>
+              <input type="text" id="entry-outside-desc" placeholder="e.g. 2 Parottas & Kurma, Hotel Meals, Idli, etc." class="w-full px-3 py-2 rounded-xl border border-purple-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white">
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Total Bill / Amount Paid (₹):</label>
+              <div class="relative">
+                <span class="absolute left-3 top-2 text-slate-400 font-bold">₹</span>
+                <input type="number" min="0" step="1" id="entry-outside-cost" oninput="updateModalCalculation()" placeholder="0" class="w-full pl-8 pr-3 py-2 rounded-xl border border-purple-200 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION C: NOTES / COMMENTS -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Optional Notes / Remarks:</label>
+          <input type="text" id="entry-notes" placeholder="e.g. Special Feast, Father fasting, etc." class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-slate-50/50">
+        </div>
+
+        <!-- TOTAL PREVIEW IN MODAL -->
+        <div class="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between text-sm">
+          <span class="text-emerald-900 font-bold">Day's Total Dinner Bill:</span>
+          <span id="modal-grand-day-total" class="font-extrabold text-lg text-emerald-700">₹80</span>
+        </div>
+
+        <!-- ACTION BUTTONS -->
+        <div class="flex items-center gap-2.5 pt-1">
+          <button type="button" onclick="deleteCurrentEntry()" id="modal-delete-btn" class="px-4 py-3 rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50 text-sm font-semibold transition active:scale-95 hidden">
+            Delete
+          </button>
+          
+          <button type="button" onclick="closeEntryModal()" class="flex-1 px-4 py-3 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-semibold transition">
+            Cancel
+          </button>
+
+          <button type="submit" class="flex-1 px-5 py-3 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm shadow-md shadow-brand-500/20 active:scale-95 transition flex items-center justify-center gap-1.5">
+            <span>💾 Save Record</span>
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: SETTINGS & BACKUP -->
+  <div id="settings-modal" onclick="if(event.target === this) closeSettingsModal()" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 p-6 space-y-5">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2">
+          <i data-lucide="settings" class="w-5 h-5 text-brand-600"></i>
+          <h3 class="font-display font-bold text-lg text-slate-900">App Settings</h3>
+        </div>
+        <button onclick="closeSettingsModal()" class="p-1 rounded-lg text-slate-400 hover:text-slate-600">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="space-y-4 text-sm">
+        <div>
+          <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Fixed Rate per Chapathi (₹):</label>
+          <input type="number" id="settings-rate" min="1" value="20" class="w-full px-3 py-2 rounded-xl border border-slate-200 font-bold text-slate-800 focus:ring-2 focus:ring-brand-500">
+          <p class="text-xs text-slate-400 mt-1">Default is ₹20 as requested.</p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Default Chapathi Count:</label>
+          <input type="number" id="settings-default-qty" min="1" value="4" class="w-full px-3 py-2 rounded-xl border border-slate-200 font-bold text-slate-800 focus:ring-2 focus:ring-brand-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Parish / Priest Name:</label>
+          <input type="text" id="settings-priest-name" value="Rev. Parish Priest" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-slate-800 focus:ring-2 focus:ring-brand-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Mom's Name (Prepared By):</label>
+          <input type="text" id="settings-mom-name" placeholder="e.g. Mary" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-slate-800 focus:ring-2 focus:ring-brand-500">
+        </div>
+
+        <!-- REMINDER NOTIFICATION SETTINGS -->
+        <div class="pt-3 border-t border-slate-100 space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-xs font-bold text-slate-700 uppercase tracking-wider">Daily Missed Entry Reminder</p>
+              <p class="text-xs text-slate-400">Notifies you if today's dinner isn't logged</p>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="settings-reminder-enabled" checked class="sr-only peer">
+              <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
+            </label>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 items-center">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Reminder Time:</label>
+              <input type="time" id="settings-reminder-time" value="21:00" class="w-full px-3 py-1.5 rounded-xl border border-slate-200 font-semibold text-slate-800 text-sm focus:ring-2 focus:ring-brand-500">
+            </div>
+            <div class="flex items-end">
+              <button type="button" onclick="testNotificationNow()" class="w-full py-2 px-3 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 text-xs font-bold transition flex items-center justify-center gap-1.5">
+                <span>🔔 Test Reminder</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Data Backup & Reset -->
+        <div class="pt-3 border-t border-slate-100 space-y-2">
+          <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Backup & Transfer</p>
+          <div class="flex gap-2">
+            <button onclick="exportDataBackup()" class="flex-1 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition flex items-center justify-center gap-1">
+              <i data-lucide="download" class="w-3.5 h-3.5"></i>
+              <span>Backup Data</span>
+            </button>
+            <label class="flex-1 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition flex items-center justify-center gap-1 cursor-pointer">
+              <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+              <span>Restore Backup</span>
+              <input type="file" id="import-file" onchange="importDataBackup(event)" class="hidden" accept=".json">
+            </label>
+          </div>
+          <button onclick="loadSampleDataDemo()" class="w-full py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-semibold transition flex items-center justify-center gap-1">
+            <span>✨ Load Example Demo Records</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="pt-2 flex justify-end">
+        <button onclick="saveSettings()" class="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm shadow transition">
+          Save Settings
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-xl flex items-center gap-2.5 text-sm font-medium transform transition-all duration-300 translate-y-20 opacity-0 pointer-events-none">
+    <span id="toast-icon">✨</span>
+    <span id="toast-message">Success</span>
+  </div>
+
+  <!-- JAVASCRIPT APPLICATION LOGIC -->
+  <script src="app.js"></script>
+</body>
+</html>
